@@ -78,6 +78,8 @@ namespace HandlebarsDotNet.Compiler
 #else
                         typeof(BindingContext).GetProperty("Value")),
 #endif
+                    Expression.Constant(CompilationContext.Configuration),
+
                     Expression.NewArrayInit(typeof(object), hex.Arguments.Select(a => Visit(a)))
                 };
                 if (helper.Target != null)
@@ -125,7 +127,7 @@ namespace HandlebarsDotNet.Compiler
             if (CompilationContext.Configuration.Helpers.ContainsKey(helperName))
             {
                 var helper = CompilationContext.Configuration.Helpers[helperName];
-                helper(context.TextWriter, context.Value, arguments.ToArray());
+                helper(context.TextWriter, context.Value, CompilationContext.Configuration, CompilationContext.Configuration, arguments.ToArray());
             }
             else
             {

@@ -6,21 +6,19 @@ namespace HandlebarsDotNet.Compiler
 {
     internal class PartialBinder : HandlebarsExpressionVisitor
     {
-        public static Expression Bind(Expression expr, CompilationContext context)
+        public static Expression Bind( Expression expr, CompilationContext context )
         {
-            return new PartialBinder(context).Visit(expr);
+            return new PartialBinder( context ).Visit( expr );
         }
 
-        private PartialBinder(CompilationContext context)
-            : base(context)
-        {
-        }
+        private PartialBinder( CompilationContext context )
+            : base( context ) { }
 
-        protected override Expression VisitStatementExpression(StatementExpression sex)
+        protected override Expression VisitStatementExpression( StatementExpression sex )
         {
-            if (sex.Body is PartialExpression)
+            if ( sex.Body is PartialExpression )
             {
-                return Visit(sex.Body);
+                return Visit( sex.Body );
             }
             else
             {
@@ -28,59 +26,72 @@ namespace HandlebarsDotNet.Compiler
             }
         }
 
-        protected override Expression VisitPartialExpression(PartialExpression pex)
+        protected override Expression VisitPartialExpression( PartialExpression pex )
         {
             Expression bindingContext = CompilationContext.BindingContext;
-            if (pex.Argument != null)
+            if ( pex.Argument != null )
             {
                 bindingContext = Expression.Call(
                     bindingContext,
 #if netstandard
                     typeof(BindingContext).GetTypeInfo().GetMethod("CreateChildContext"),
 #else
-                    typeof(BindingContext).GetMethod("CreateChildContext"),
+                    typeof(BindingContext).GetMethod( "CreateChildContext" ),
 #endif
-                    pex.Argument);
+                    pex.Argument );
             }
             return Expression.Call(
 #if netstandard
                 new Action<string, BindingContext, HandlebarsConfiguration>(InvokePartial).GetMethodInfo(),
 #else
-                new Action<string, BindingContext, HandlebarsConfiguration>(InvokePartial).Method,
+                new Action<string, BindingContext, HandlebarsConfiguration>( InvokePartial ).Method,
 #endif
-                Expression.Convert(pex.PartialName, typeof(string)),
+                Expression.Convert( pex.PartialName, typeof(string) ),
                 bindingContext,
-                Expression.Constant(CompilationContext.Configuration));
+                Expression.Constant( CompilationContext.Configuration ) );
         }
 
         private static void InvokePartial(
             string partialName,
             BindingContext context,
-            HandlebarsConfiguration configuration)
+            HandlebarsConfiguration configuration )
         {
-            if (configuration.RegisteredTemplates.ContainsKey(partialName) == false)
+            if ( configuration.RegisteredTemplates.ContainsKey( partialName ) == false )
             {
-                if (configuration.FileSystem != null && context.TemplatePath != null)
+                if ( configuration.FileSystem != null && context.TemplatePath != null )
                 {
-                    var partialPath = configuration.FileSystem.Closest(context.TemplatePath,
-                        "partials/" + partialName + ".hbs");
-                    if (partialPath != null)
+                    var partialPath = configuration.FileSystem.Closest( context.TemplatePath,
+                        "partials/" + partialName + ".hbs" );
+                    if ( partialPath != null )
                     {
-                        var compiled = Handlebars.Create(configuration)
-                            .CompileView(partialPath);
-                        configuration.RegisteredTemplates.Add(partialName, (writer, o) =>
-                        {
-                            writer.Write(compiled(o));
-                        });
+                        var compiled = Handlebars.Create( configuration )
+                            .CompileView( partialPath );
+                        configuration.RegisteredTemplates.Add( partialName,
+                            ( writer, o ) =>
+                            {
+                                writer.Write( compiled( o ) );
+                            } );
                     }
                 }
                 else
                 {
                     throw new HandlebarsRuntimeException(
-                        string.Format("Referenced partial name {0} could not be resolved", partialName));
+                        string.Format( "Referenced partial name {0} could not be resolved", partialName ) );
                 }
             }
-            configuration.RegisteredTemplates[partialName](context.TextWriter, context);
+
+            try
+            {
+                configuration.RegisteredTemplates[partialName](context.TextWriter, context);
+            }
+            catch ( Exception exception )
+            {
+                //preserve error information:
+
+                throw new HandlebarsRuntimeException( $"Runtime error while rendering partial '{partialName}', see inner exception for more information",
+                    exception );
+            }
+            
         }
     }
 }

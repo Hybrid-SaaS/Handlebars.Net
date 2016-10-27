@@ -25,17 +25,32 @@ namespace HandlebarsDotNet.Compiler
             {
                 throw new HandlebarsCompilerException("Sub-expression does not contain a converted MethodCall expression");
             }
-            HandlebarsHelper helper = GetHelperDelegateFromMethodCallExpression(helperCall);
+            var helper = GetHelperDelegateFromMethodCallExpression(helperCall);
+      
+            
+            /*
+        private static string CaptureTextWriterOutputFromHelper(
+HandlebarsHelper helper,
+object context,
+HandlebarsConfiguration configuration,
+object[] arguments
+)
+
+ */
             return Expression.Call(
 #if netstandard
-                new Func<HandlebarsHelper, object, object[], string>(CaptureTextWriterOutputFromHelper).GetMethodInfo(),
+                new Func<HandlebarsHelper, object, HandlebarsConfiguration, object[], string>(CaptureTextWriterOutputFromHelper).GetMethodInfo(),
 #else
-                new Func<HandlebarsHelper, object, object[], string>(CaptureTextWriterOutputFromHelper).Method,
+                new Func<HandlebarsHelper, object, HandlebarsConfiguration, object[], string>(
+                    CaptureTextWriterOutputFromHelper ).Method,
 #endif
-                Expression.Constant(helper),
-                Visit(helperCall.Arguments[1]),
-                Visit(helperCall.Arguments[2]));
+                Expression.Constant( helper ),
+                Visit( helperCall.Arguments[1] ),
+                Visit( helperCall.Arguments[2] ),
+                Visit( helperCall.Arguments[3] ) );
         }
+
+        
 
         private static HandlebarsHelper GetHelperDelegateFromMethodCallExpression(MethodCallExpression helperCall)
         {
@@ -51,6 +66,8 @@ namespace HandlebarsDotNet.Compiler
                 {
                     throw new NotSupportedException("Helper method instance target must be reduced to a ConstantExpression");
                 }
+
+
 #if netstandard
                 helper = (HandlebarsHelper)helperCall.Method.CreateDelegate(typeof(HandlebarsHelper), target);
 #else
@@ -71,12 +88,14 @@ namespace HandlebarsDotNet.Compiler
         private static string CaptureTextWriterOutputFromHelper(
             HandlebarsHelper helper,
             object context,
-            object[] arguments)
+            HandlebarsConfiguration configuration,
+            object[] arguments
+            )
         {
             var builder = new StringBuilder();
             using (var writer = new StringWriter(builder))
             {
-                helper(writer, context, arguments);
+               helper(writer, context, configuration, arguments);
             }
             return builder.ToString();
         }

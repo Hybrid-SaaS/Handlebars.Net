@@ -49,6 +49,7 @@ namespace HandlebarsDotNet.Compiler
                 Expression.Property(
                     CompilationContext.BindingContext,
                     typeof(BindingContext).GetRuntimeProperty("Value")),
+                Expression.Constant( CompilationContext.Configuration ), 
                 Expression.NewArrayInit(typeof(object), bhex.Arguments)
 #else
                 Expression.Property(
@@ -61,6 +62,12 @@ namespace HandlebarsDotNet.Compiler
                 Expression.Property(
                     CompilationContext.BindingContext,
                     typeof(BindingContext).GetProperty("Value")),
+
+
+
+                Expression.Constant( CompilationContext.Configuration ),
+
+
                 Expression.NewArrayInit(typeof(object), bhex.Arguments)
 #endif
             };
