@@ -82,6 +82,7 @@ namespace HandlebarsDotNet.Compiler
 
             try
             {
+
                 configuration.RegisteredTemplates[partialName](context.TextWriter, context);
             }
             catch ( Exception exception )

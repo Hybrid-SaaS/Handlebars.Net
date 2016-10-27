@@ -65,3 +65,5 @@ packages/
 [Tt]est-[Rr]esults/
 *.snk
 /**/project.lock.json
+/source/Handlebars/Handlebars.csproj.GhostDoc.xml
+/source/Handlebars.sln.GhostDoc.xml
